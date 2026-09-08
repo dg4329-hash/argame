@@ -1,0 +1,357 @@
+/* Maze AR — Pokémon GBA text-box aesthetic */
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+
+:root {
+  --bg: #0b1a10;
+  --cream: #f8f0d8;
+  --ink: #2c2c2c;
+  --inner: #b8a878;
+  --dim: #6b6350;
+  --accent: #e0483c;
+  --green: #2e8b4a;
+  --red: #c8342a;
+  --yellow: #b8860b;
+  --font: "Press Start 2P", "Courier New", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--cream);
+  font-family: var(--font);
+  -webkit-font-smoothing: none;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* ---------- HUD ---------- */
+#hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 8px;
+  padding: 10px 12px;
+  font-size: 10px;
+  line-height: 1;
+  z-index: 5;
+}
+
+.hud-item,
+.hud-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--cream);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  box-shadow: inset 0 0 0 2px var(--inner);
+  font-family: var(--font);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.hud-item .k {
+  color: var(--dim);
+}
+
+.hud-item .v {
+  color: var(--ink);
+}
+
+#hud-tracker[data-state="ready"] {
+  color: var(--green);
+}
+#hud-tracker[data-state="error"] {
+  color: var(--red);
+}
+#hud-tracker[data-state="loading"] {
+  color: var(--yellow);
+}
+
+.hud-btn {
+  margin-left: auto;
+  cursor: pointer;
+  line-height: 1;
+}
+.hud-btn:hover,
+.hud-btn:focus-visible {
+  background: var(--ink);
+  color: var(--cream);
+  box-shadow: inset 0 0 0 2px var(--cream);
+  outline: none;
+}
+.hud-btn:active {
+  transform: translateY(1px);
+}
+
+/* ---------- Stage ---------- */
+#stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 12px;
+}
+
+canvas#game {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
+#swipe-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 96px;
+  line-height: 1;
+  color: var(--cream);
+  text-shadow: 4px 4px 0 var(--ink);
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+#swipe-indicator.pop {
+  animation: swipe-pop 400ms ease-out forwards;
+}
+
+@keyframes swipe-pop {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+
+/* ---------- Camera PiP ---------- */
+#pip {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: 240px;
+  aspect-ratio: 4 / 3;
+  background: #000;
+  border: 3px solid var(--cream);
+  box-shadow: inset 0 0 0 2px var(--ink), 0 0 0 2px var(--ink);
+  overflow: hidden;
+  z-index: 10;
+}
+
+#cam {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+#pip-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transform: none;
+}
+
+#pip-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 5px 6px;
+  font-size: 8px;
+  line-height: 1;
+  text-align: center;
+  color: var(--cream);
+  background: rgba(11, 26, 16, 0.85);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- Overlays ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 50;
+  padding: 16px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.dialog {
+  background: var(--cream);
+  color: var(--ink);
+  border: 4px solid var(--ink);
+  box-shadow: inset 0 0 0 3px var(--inner), 0 0 0 3px var(--cream);
+  padding: 28px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  font-family: var(--font);
+  font-size: 10px;
+  line-height: 1.8;
+}
+
+.dialog h1 {
+  font-size: 26px;
+  line-height: 1.2;
+  margin: 0 0 18px;
+  letter-spacing: 1px;
+}
+.dialog h1 span {
+  color: var(--accent);
+  margin-left: 6px;
+}
+
+.dialog h2 {
+  font-size: 16px;
+  line-height: 1.4;
+  margin: 0 0 14px;
+  color: var(--accent);
+}
+
+.dialog p {
+  margin: 0 0 16px;
+}
+
+.dialog button {
+  position: relative;
+  display: inline-block;
+  margin: 6px 0 10px;
+  padding: 12px 20px 12px 30px;
+  background: var(--cream);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  box-shadow: inset 0 0 0 2px var(--inner);
+  font-family: var(--font);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.dialog button::before {
+  content: "► ";
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+}
+
+.dialog button:hover::before,
+.dialog button:focus-visible::before {
+  opacity: 1;
+  animation: blink 0.6s steps(1) infinite;
+}
+
+.dialog button:hover,
+.dialog button:focus-visible {
+  outline: none;
+}
+
+.dialog button:active {
+  transform: translateY(1px);
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.error {
+  color: var(--red);
+}
+
+.hint {
+  font-size: 8px;
+  color: var(--dim);
+  margin-bottom: 0 !important;
+}
+
+#win-stats {
+  white-space: pre-line;
+}
+
+#overlay-win .dialog {
+  animation: dialog-in 250ms ease-out both;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ---------- Narrow screens ---------- */
+@media (max-width: 700px) {
+  #pip {
+    width: 140px;
+    right: 8px;
+    bottom: 8px;
+  }
+  #hud,
+  .hud-item,
+  .hud-btn {
+    font-size: 8px;
+  }
+  #hud {
+    gap: 6px;
+    padding: 8px;
+  }
+  .hud-item,
+  .hud-btn {
+    padding: 6px 8px;
+  }
+  .dialog {
+    padding: 20px;
+  }
+  .dialog h1 {
+    font-size: 20px;
+  }
+  #swipe-indicator {
+    font-size: 64px;
+  }
+}

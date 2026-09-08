@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Maze AR</title>
+    <meta name="description" content="Solve procedurally generated mazes by swiping your hand in front of the webcam. MediaPipe hand tracking, GBA pixel art." />
+    <meta name="theme-color" content="#0b1a10" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%80%3C/text%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- HUD: level, moves, timer, tracker status -->
+      <header id="hud">
+        <div class="hud-item"><span class="k">LEVEL</span><span class="v" id="hud-level">1</span></div>
+        <div class="hud-item"><span class="k">MOVES</span><span class="v" id="hud-moves">0</span></div>
+        <div class="hud-item"><span class="k">TIME</span><span class="v" id="hud-time">0.0</span></div>
+        <div class="hud-item"><span class="k">HAND</span><span class="v" id="hud-tracker">idle</span></div>
+        <button id="btn-new" class="hud-btn" title="Generate a new maze (N)">NEW MAZE</button>
+      </header>
+
+      <!-- Main game canvas: maze + character -->
+      <main id="stage">
+        <canvas id="game"></canvas>
+        <!-- last-swipe indicator arrow -->
+        <div id="swipe-indicator" class="hidden"></div>
+      </main>
+
+      <!-- Camera picture-in-picture with hand skeleton overlay -->
+      <aside id="pip">
+        <video id="cam" autoplay muted playsinline></video>
+        <canvas id="pip-canvas"></canvas>
+        <div id="pip-label">SWIPE TO MOVE</div>
+      </aside>
+
+      <!-- Start overlay: asks for camera -->
+      <div id="overlay-start" class="overlay">
+        <div class="dialog">
+          <h1>MAZE<span>AR</span></h1>
+          <p>Swipe your hand in front of the camera to move. Find the exit.</p>
+          <button id="btn-start">START</button>
+          <p id="start-error" class="error hidden"></p>
+          <p class="hint">We'll ask for camera access so we can see your hand. Arrow keys / WASD also work.</p>
+        </div>
+      </div>
+
+      <!-- Win overlay: shown when the maze is solved -->
+      <div id="overlay-win" class="overlay hidden">
+        <div class="dialog">
+          <h2>MAZE CLEARED!</h2>
+          <p id="win-stats"></p>
+          <button id="btn-next">NEXT MAZE</button>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
