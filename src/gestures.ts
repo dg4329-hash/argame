@@ -12,7 +12,7 @@
 
 import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
 import type { HandLandmarkerResult, NormalizedLandmark } from "@mediapipe/tasks-vision";
-import type { Dir, SwipeEvent, TrackerStatus } from "./types";
+import type { Dir, PointerSample, SwipeEvent, TrackerStatus } from "./types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tunables
@@ -127,6 +127,8 @@ export class GestureController {
   private lastVideoTime = -1;
 
   private swipeCbs = new Set<(e: SwipeEvent) => void>();
+  private pointerCbs = new Set<(p: PointerSample) => void>();
+  private tipSmoothed: { x: number; y: number } | null = null;
   private statusCbs = new Set<(s: TrackerStatus) => void>();
 
   // Swipe state
@@ -188,6 +190,12 @@ export class GestureController {
     this.lastVideoTime = -1;
     cancelAnimationFrame(this.rafId);
     this.rafId = requestAnimationFrame(this.loop);
+  }
+
+  /** Continuous index-fingertip stream (landmark 8), mirrored + lightly smoothed. */
+  onPointer(cb: (p: PointerSample) => void): () => void {
+    this.pointerCbs.add(cb);
+    return () => { this.pointerCbs.delete(cb); };
   }
 
   onSwipe(cb: (e: SwipeEvent) => void): () => void {
@@ -320,9 +328,17 @@ export class GestureController {
 
     this.pushSample(this.smoothed.x, this.smoothed.y, now);
     this.updateSwipe(now);
+
+    // Index fingertip pointer (snappier smoothing than the palm so it feels direct).
+    const tx = 1 - lm[8].x, ty = lm[8].y;
+    if (!this.tipSmoothed) this.tipSmoothed = { x: tx, y: ty };
+    else { this.tipSmoothed.x += 0.65 * (tx - this.tipSmoothed.x); this.tipSmoothed.y += 0.65 * (ty - this.tipSmoothed.y); }
+    for (const cb of this.pointerCbs) cb({ x: this.tipSmoothed.x, y: this.tipSmoothed.y, visible: true, ts: now });
   }
 
   private onHandLost(): void {
+    if (this.handVisible) for (const cb of this.pointerCbs) cb({ x: 0, y: 0, visible: false, ts: performance.now() });
+    this.tipSmoothed = null;
     this.handVisible = false;
     this.lastLandmarks = null;
     this.smoothed = null;

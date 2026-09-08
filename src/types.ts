@@ -54,3 +54,11 @@ export interface SwipeEvent {
 }
 
 export type TrackerStatus = "idle" | "loading" | "ready" | "error";
+
+/** Continuous index-fingertip position, mirrored, normalized 0..1 over the camera frame. */
+export interface PointerSample {
+  x: number;
+  y: number;
+  visible: boolean;
+  ts: number;
+}

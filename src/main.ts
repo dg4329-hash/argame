@@ -3,7 +3,7 @@ import { Renderer } from "./render";
 import { GestureController } from "./gestures";
 import { ui } from "./ui";
 import { sfx } from "./sfx";
-import type { Dir } from "./types";
+import type { Dir, PointerSample } from "./types";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const video = document.getElementById("cam") as HTMLVideoElement;
@@ -78,11 +78,12 @@ async function startGestures() {
   gestures = new GestureController(video, pipCanvas);
   gestures.onStatus((s) => {
     ui.setTracker(s, gestures?.handVisible ?? false);
-    if (s === "ready") ui.setPipLabel("SWIPE TO MOVE");
+    if (s === "ready") ui.setPipLabel("POINT TO MOVE");
     if (s === "loading") ui.setPipLabel("LOADING HAND MODEL…");
     if (s === "error") ui.setPipLabel("CAMERA OFF · USE ARROW KEYS");
   });
-  gestures.onSwipe((e) => { sfx.swipe(); move(e.dir); });
+  // Finger-follow control: the trainer chases the index fingertip, one tile at a time.
+  gestures.onPointer((p) => { pointer = p; });
   try {
     await gestures.init();
   } catch (err: any) {
@@ -95,6 +96,41 @@ async function startGestures() {
       startError.classList.remove("hidden");
     }
   }
+}
+
+// ---- Finger follow ----
+// Camera coords are mirrored+normalized. Map an inner window of the frame onto the whole maze
+// so the player doesn't have to reach the edges of the camera view.
+const EDGE = 0.12;
+const STEP_MS = 170;       // min time between steps (matches the slide animation)
+const DEADZONE = 0.45;     // in cells; how far the finger must be from the trainer's center to step
+let pointer: PointerSample | null = null;
+let lastStepAt = 0;
+
+function followPointer(now: number) {
+  if (!started || game.won || !pointer) return;
+  if (!pointer.visible) { renderer.setPointer(0, 0, false); return; }
+  const nx = Math.min(1, Math.max(0, (pointer.x - EDGE) / (1 - 2 * EDGE)));
+  const ny = Math.min(1, Math.max(0, (pointer.y - EDGE) / (1 - 2 * EDGE)));
+  renderer.setPointer(nx, ny, true);
+  if (renderer.isAnimating() || now - lastStepAt < STEP_MS) return;
+
+  const { cx, cy } = renderer.normToCell(nx, ny);
+  const dx = cx - (game.player.x + 0.5);
+  const dy = cy - (game.player.y + 0.5);
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < DEADZONE) return;
+
+  const primary: Dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up");
+  const secondary: Dir = Math.abs(dx) > Math.abs(dy) ? (dy > 0 ? "down" : "up") : (dx > 0 ? "right" : "left");
+  const secondaryMag = Math.abs(dx) > Math.abs(dy) ? Math.abs(dy) : Math.abs(dx);
+
+  lastStepAt = now;
+  let res = game.tryMove(primary);
+  if (!res.ok && secondaryMag >= DEADZONE) res = game.tryMove(secondary);
+  renderer.applyMove(res);
+  ui.setMoves(game.moves);
+  if (res.ok) sfx.step();
+  if (res.won) onWin();
 }
 
 // ---- Boot ----
@@ -118,6 +154,7 @@ let lastHandVisible: boolean | null = null;
 function loop(now: number) {
   const dt = Math.min((now - last) / 1000, 0.1);
   last = now;
+  followPointer(now);
   renderer.frame(dt);
   if (started && !game.won) ui.setTime(game.elapsedSeconds());
   if (gestures && gestures.handVisible !== lastHandVisible) {
